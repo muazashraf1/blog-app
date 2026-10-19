@@ -1,0 +1,1120 @@
+openapi: 3.0.3
+info:
+  title: Blog Platform API
+  version: 1.0.0
+  description: RESTful API for FalconXoft Blog Platform with RBAC (Reader, Author,
+    Admin), Full-Text Search, and Markdown Posts.
+paths:
+  /api/v1/admin/users/:
+    get:
+      operationId: v1_admin_users_list
+      description: |-
+        GET /api/v1/admin/users/
+        Admin-only endpoint: Lists all registered users in the platform.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+  /api/v1/admin/users/{id}/:
+    patch:
+      operationId: v1_admin_users_partial_update
+      description: |-
+        PATCH /api/v1/admin/users/{id}/
+        Admin-only endpoint: Change user role (e.g., promote to 'author') or toggle is_active.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminUserUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminUserUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAdminUserUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUserUpdate'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: v1_auth_login_create
+      description: |-
+        POST /api/v1/auth/login/
+        Public endpoint: Returns JWT access & refresh tokens along with user profile.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomTokenObtainPair'
+          description: ''
+  /api/v1/auth/me/:
+    get:
+      operationId: v1_auth_me_retrieve
+      description: |-
+        GET /api/v1/auth/me/
+        Authenticated endpoint: Returns details of the currently logged-in user.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/refresh/:
+    post:
+      operationId: v1_auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/register/:
+    post:
+      operationId: v1_auth_register_create
+      description: |-
+        POST /api/v1/auth/register/
+        Public endpoint: Allows visitors to register with email, username, and password.
+        Default role assigned is 'reader'.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserRegister'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserRegister'
+          description: ''
+  /api/v1/categories/:
+    get:
+      operationId: v1_categories_list
+      description: |-
+        GET  /api/v1/categories/      -> Public (List all categories)
+        POST /api/v1/categories/      -> Admin only (Create category)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+    post:
+      operationId: v1_categories_create
+      description: |-
+        GET  /api/v1/categories/      -> Public (List all categories)
+        POST /api/v1/categories/      -> Admin only (Create category)
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/v1/categories/{id}/:
+    get:
+      operationId: v1_categories_retrieve
+      description: |-
+        PATCH  /api/v1/categories/{id}/ -> Admin only (Update category)
+        DELETE /api/v1/categories/{id}/ -> Admin only (Delete category)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: v1_categories_partial_update
+      description: |-
+        PATCH  /api/v1/categories/{id}/ -> Admin only (Update category)
+        DELETE /api/v1/categories/{id}/ -> Admin only (Delete category)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: v1_categories_destroy
+      description: |-
+        PATCH  /api/v1/categories/{id}/ -> Admin only (Update category)
+        DELETE /api/v1/categories/{id}/ -> Admin only (Delete category)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/comments/{id}/:
+    get:
+      operationId: v1_comments_retrieve
+      description: |-
+        PATCH  /api/v1/comments/{id}/ -> Comment Owner only
+        DELETE /api/v1/comments/{id}/ -> Comment Owner OR Admin (moderation)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+          description: ''
+    patch:
+      operationId: v1_comments_partial_update
+      description: |-
+        PATCH  /api/v1/comments/{id}/ -> Comment Owner only
+        DELETE /api/v1/comments/{id}/ -> Comment Owner OR Admin (moderation)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCommentCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCommentCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCommentCreateUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentCreateUpdate'
+          description: ''
+    delete:
+      operationId: v1_comments_destroy
+      description: |-
+        PATCH  /api/v1/comments/{id}/ -> Comment Owner only
+        DELETE /api/v1/comments/{id}/ -> Comment Owner OR Admin (moderation)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/me/posts/:
+    get:
+      operationId: v1_me_posts_list
+      description: |-
+        GET /api/v1/me/posts/
+        Author/Admin only: Lists all posts (both drafts and published) authored by logged-in user.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPostListList'
+          description: ''
+  /api/v1/posts/:
+    get:
+      operationId: v1_posts_list
+      description: |-
+        GET  /api/v1/posts/ -> Public feed of published posts (?search= & ?category= & ?page=)
+        POST /api/v1/posts/ -> Author or Admin only (Create draft post)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPostListList'
+          description: ''
+    post:
+      operationId: v1_posts_create
+      description: |-
+        GET  /api/v1/posts/ -> Public feed of published posts (?search= & ?category= & ?page=)
+        POST /api/v1/posts/ -> Author or Admin only (Create draft post)
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostCreateUpdate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCreateUpdate'
+          description: ''
+  /api/v1/posts/{slug}/:
+    get:
+      operationId: v1_posts_retrieve
+      description: |-
+        GET    /api/v1/posts/{slug}/ -> Public if published; Author/Admin if draft (AC2, AC3)
+        PATCH  /api/v1/posts/{slug}/ -> Post Author or Admin only (AC4)
+        DELETE /api/v1/posts/{slug}/ -> Post Author or Admin only
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDetail'
+          description: ''
+    patch:
+      operationId: v1_posts_partial_update
+      description: |-
+        GET    /api/v1/posts/{slug}/ -> Public if published; Author/Admin if draft (AC2, AC3)
+        PATCH  /api/v1/posts/{slug}/ -> Post Author or Admin only (AC4)
+        DELETE /api/v1/posts/{slug}/ -> Post Author or Admin only
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPostCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPostCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPostCreateUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCreateUpdate'
+          description: ''
+    delete:
+      operationId: v1_posts_destroy
+      description: |-
+        GET    /api/v1/posts/{slug}/ -> Public if published; Author/Admin if draft (AC2, AC3)
+        PATCH  /api/v1/posts/{slug}/ -> Post Author or Admin only (AC4)
+        DELETE /api/v1/posts/{slug}/ -> Post Author or Admin only
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/posts/{slug}/comments/:
+    get:
+      operationId: v1_posts_comments_list
+      description: |-
+        GET  /api/v1/posts/{slug}/comments/ -> Public (List comments for a post)
+        POST /api/v1/posts/{slug}/comments/ -> Logged-in users (Reader, Author, Admin)
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCommentList'
+          description: ''
+    post:
+      operationId: v1_posts_comments_create
+      description: |-
+        GET  /api/v1/posts/{slug}/comments/ -> Public (List comments for a post)
+        POST /api/v1/posts/{slug}/comments/ -> Logged-in users (Reader, Author, Admin)
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommentCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommentCreateUpdate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentCreateUpdate'
+          description: ''
+  /api/v1/posts/{slug}/publish/:
+    post:
+      operationId: v1_posts_publish_create
+      description: |-
+        POST /api/v1/posts/{slug}/publish/
+        Author or Admin: Moves post from draft to published, sets published_at timestamp.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/posts/{slug}/unpublish/:
+    post:
+      operationId: v1_posts_unpublish_create
+      description: |-
+        POST /api/v1/posts/{slug}/unpublish/
+        Author or Admin: Moves post from published back to draft.
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    AdminUserUpdate:
+      type: object
+      description: Used exclusively by Admin to change user roles or deactivate accounts.
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+    AuthorSummary:
+      type: object
+      description: |-
+        Minimal user details attached to posts (id and username).
+        Keeps API responses clean and lightweight.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          maxLength: 50
+      required:
+      - id
+      - username
+    Category:
+      type: object
+      description: |-
+        Serializer for Categories.
+        Admin creates/updates them; anyone can read.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 80
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - id
+      - name
+      - slug
+    Comment:
+      type: object
+      description: Serializer for listing and reading comments on a post.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        post:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/AuthorSummary'
+          readOnly: true
+        body:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        is_owner:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - body
+      - created_at
+      - id
+      - is_owner
+      - post
+      - updated_at
+      - user
+    CommentCreateUpdate:
+      type: object
+      description: |-
+        Serializer for creating and editing comments.
+        Enforces 1 to 1000 characters validation.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        body:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      required:
+      - body
+      - id
+    CustomTokenObtainPair:
+      type: object
+      description: |-
+        Customizes JWT payload to embed essential user information:
+        - user_id, email, username, role
+        This avoids frequent /me calls from Next.js.
+      properties:
+        email:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    PaginatedCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedCommentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+    PaginatedPostListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostList'
+    PaginatedUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    PatchedAdminUserUpdate:
+      type: object
+      description: Used exclusively by Admin to change user roles or deactivate accounts.
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+    PatchedCategory:
+      type: object
+      description: |-
+        Serializer for Categories.
+        Admin creates/updates them; anyone can read.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 80
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+    PatchedCommentCreateUpdate:
+      type: object
+      description: |-
+        Serializer for creating and editing comments.
+        Enforces 1 to 1000 characters validation.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        body:
+          type: string
+          minLength: 1
+          maxLength: 1000
+    PatchedPostCreateUpdate:
+      type: object
+      description: |-
+        Serializer for creating and editing posts.
+        Accepts category_id to associate a post with a category.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        body:
+          type: string
+          description: Markdown format content
+        category_id:
+          type: integer
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+    PostCreateUpdate:
+      type: object
+      description: |-
+        Serializer for creating and editing posts.
+        Accepts category_id to associate a post with a category.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        body:
+          type: string
+          description: Markdown format content
+        category_id:
+          type: integer
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+      required:
+      - body
+      - id
+      - slug
+      - status
+      - title
+    PostDetail:
+      type: object
+      description: |-
+        Full serializer for reading an individual post.
+        Includes full markdown body.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          oneOf:
+          - type: string
+            maxLength: 220
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        author:
+          allOf:
+          - $ref: '#/components/schemas/AuthorSummary'
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+        body:
+          type: string
+          description: Markdown format content
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - body
+      - category
+      - created_at
+      - id
+      - title
+      - updated_at
+    PostList:
+      type: object
+      description: |-
+        Optimized serializer for post feeds (Home page and dashboard lists).
+        Includes author and category objects instead of just IDs.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        slug:
+          oneOf:
+          - type: string
+            maxLength: 220
+            pattern: ^[-a-zA-Z0-9_]+$
+          - type: string
+            maxLength: 0
+        author:
+          allOf:
+          - $ref: '#/components/schemas/AuthorSummary'
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/Category'
+          readOnly: true
+        excerpt:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - author
+      - category
+      - created_at
+      - excerpt
+      - id
+      - title
+    RoleEnum:
+      enum:
+      - reader
+      - author
+      - admin
+      type: string
+      description: |-
+        * `reader` - Reader
+        * `author` - Author
+        * `admin` - Admin
+    StatusEnum:
+      enum:
+      - draft
+      - published
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `published` - Published
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    User:
+      type: object
+      description: |-
+        Publicly safe representation of a User.
+        Never exposes password_hash.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        username:
+          type: string
+          maxLength: 50
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - id
+      - is_active
+      - role
+      - username
+    UserRegister:
+      type: object
+      description: |-
+        Handles user registration:
+        - Validates email and username uniqueness
+        - Enforces Django's strong password validation
+        - Automatically sets role to 'reader'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        username:
+          type: string
+          maxLength: 50
+        password:
+          type: string
+          writeOnly: true
+        password_confirm:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - id
+      - password
+      - password_confirm
+      - username
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/venv/
+backend/env/
+.venv/
+env/
+venv/
+*.sqlite3
+db.sqlite3
+
+# Environment & Secrets (Strict Rule from PDF: No passwords, keys or secrets in repo)
+.env
+.env.local
+*.env
+
+# Static & Media
+backend/staticfiles/
+backend/media/
+
+# Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+.next/
+node_modules/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

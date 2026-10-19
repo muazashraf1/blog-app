@@ -1,0 +1,32 @@
+name: Blog Platform CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: Run Pytest Suite
+        env:
+          USE_SQLITE: "True"
+          DJANGO_SECRET_KEY: "ci-secret-key-blog-platform"
+          DJANGO_DEBUG: "True"
+        run: |
+          cd backend
+          pytest
